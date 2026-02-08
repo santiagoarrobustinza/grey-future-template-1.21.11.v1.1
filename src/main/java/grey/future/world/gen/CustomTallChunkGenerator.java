@@ -63,7 +63,6 @@ public class CustomTallChunkGenerator extends ChunkGenerator {
 
     @Override
     public void buildSurface(ChunkRegion region, StructureAccessor structures, NoiseConfig noiseConfig, Chunk chunk) {
-        // Fill chunk with random cubic structures
         int chunkX = chunk.getPos().x;
         int chunkZ = chunk.getPos().z;
 
@@ -73,35 +72,38 @@ public class CustomTallChunkGenerator extends ChunkGenerator {
                     int worldX = chunkX * 16 + x;
                     int worldZ = chunkZ * 16 + z;
 
-                    // Snap to structure origin
-                    int structureX = worldX / 4; // Assuming size 4 as base
-                    int structureY = y / 4;
-                    int structureZ = worldZ / 4;
+                    // Use a large base grid to determine structure size
+                    int baseSize = 512;
+                    int baseStructureX = (worldX / baseSize) * baseSize;
+                    int baseStructureY = (y / baseSize) * baseSize;
+                    int baseStructureZ = (worldZ / baseSize) * baseSize;
 
-                    // Get random for this structure (ONCE per structure)
-                    Random structureRandom = new Random(seed);
-                    structureRandom.setSeed(seed ^ ((long)structureX * 73856093L ^ (long)structureY * 19349663L ^ (long)structureZ * 83492791L));
+                    // Get random for this mega-structure region
+                    Random regionRandom = new Random(seed);
+                    regionRandom.setSeed(seed ^ ((long)baseStructureX * 73856093L ^ (long)baseStructureY * 19349663L ^ (long)baseStructureZ * 83492791L));
 
-                    // Calculate size once per structure
-                    int roll = structureRandom.nextInt(100);
-                    int exponent;
-                    if (roll < 30) exponent = 0;           // 5% chance: 2^0 = 1
-                    else if (roll < 55) exponent = 1;     // 15% chance: 2^1 = 2
-                    else if (roll < 70) exponent = 2;     // 15% chance: 2^2 = 4 (peak around 3)
-                    else if (roll < 75) exponent = 3;     // 13% chance: 2^3 = 8
-                    else if (roll < 79) exponent = 4;     // 10% chance: 2^4 = 16
-                    else if (roll < 83) exponent = 5;     // 8% chance: 2^5 = 32
-                    else if (roll < 85) exponent = 6;     // 6% chance: 2^6 = 64
-                    else if (roll < 87) exponent = 7;     // 5% chance: 2^7 = 128
-                    else if (roll < 90) exponent = 8;     // 4% chance: 2^8 = 256
-                    else exponent = 9 + structureRandom.nextInt(5);
+                    // Calculate size for this region
+                    int roll = regionRandom.nextInt(100);
+                    int structureSize;
+                    if (roll < 30) structureSize = 1;
+                    else if (roll < 55) structureSize = 2;
+                    else if (roll < 70) structureSize = 4;
+                    else if (roll < 75) structureSize = 8;
+                    else if (roll < 79) structureSize = 16;
+                    else if (roll < 83) structureSize = 32;
+                    else if (roll < 85) structureSize = 64;
+                    else if (roll < 87) structureSize = 128;
+                    else if (roll < 90) structureSize = 256;
+                    else structureSize = 512 + regionRandom.nextInt(1024);
 
-                    int structureSize = (int) Math.pow(2, exponent);
-
-                    // Re-snap with actual size
+                    // Snap to actual structure size
                     int actualStructureX = (worldX / structureSize) * structureSize;
                     int actualStructureY = (y / structureSize) * structureSize;
                     int actualStructureZ = (worldZ / structureSize) * structureSize;
+
+                    // Get final random for fill/air decision
+                    Random structureRandom = new Random(seed);
+                    structureRandom.setSeed(seed ^ ((long)actualStructureX * 73856093L ^ (long)actualStructureY * 19349663L ^ (long)actualStructureZ * 83492791L));
 
                     // Fill or air
                     boolean fillBlock = structureRandom.nextInt(10) < 3;

@@ -35,6 +35,7 @@
     "minecraft:buried_treasure": []
   },
   "effects": {
+    "sky_color": 11184810,
     "clouds": false
   }
 }
