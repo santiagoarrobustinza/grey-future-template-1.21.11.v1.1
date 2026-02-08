@@ -1,10 +1,10 @@
 package grey.future.world.gen;
 
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.ChunkRegion;
 import net.minecraft.world.HeightLimitView;
 import net.minecraft.world.Heightmap;
@@ -17,25 +17,27 @@ import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.chunk.VerticalBlockSample;
 import net.minecraft.world.gen.noise.NoiseConfig;
 import net.minecraft.block.BlockState;
+import grey.future.block.ModBlocks;
 
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Custom chunk generator for tall dimensions
- * Supports terrain up to thousands of blocks high
+ * Custom chunk generator for tall dimensions with random cubic structures
  */
 public class CustomTallChunkGenerator extends ChunkGenerator {
     public static final MapCodec<CustomTallChunkGenerator> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
                     BiomeSource.CODEC.fieldOf("biome_source").forGetter(gen -> gen.biomeSource),
-                    MapCodec.assumeMapUnsafe(com.mojang.serialization.Codec.LONG).fieldOf("seed").forGetter(gen -> gen.seed)
+                    Codec.LONG.fieldOf("seed").forGetter(gen -> gen.seed)
             ).apply(instance, CustomTallChunkGenerator::new)
     );
 
-    private final long seed;
+    public final long seed;
     private final BiomeSource biomeSource;
-    private static final int MAX_HEIGHT = 4064; // Thousands of blocks high
+    private static final int MAX_HEIGHT = 2096;
+    private static final int MIN_Y = -64;
 
     public CustomTallChunkGenerator(BiomeSource biomeSource, long seed) {
         super(biomeSource);
@@ -43,30 +45,10 @@ public class CustomTallChunkGenerator extends ChunkGenerator {
         this.seed = seed;
     }
 
-    /**
-     * Calculate terrain height using multiple noise layers
-     * This creates varied, mountainous terrain up to 4000+ blocks high
-     */
-    private int calculateTerrainHeight(int x, int z) {
-        // Base noise (very large features, 0-2000 blocks)
-        double baseNoise = MathHelper.sin((x * 0.001f) + (z * 0.001f)) * 1000 + 1000;
-
-        // Mid noise (large features, ±500 blocks)
-        double midNoise = MathHelper.sin((x * 0.01f) + (z * 0.01f)) * 500;
-
-        // Detail noise (medium features, ±200 blocks)
-        double detailNoise = MathHelper.sin((x * 0.05f) + (z * 0.05f)) * 200;
-
-        // Fine detail noise (small variations, ±100 blocks)
-        double fineNoise = MathHelper.sin((x * 0.1f) + (z * 0.1f)) * 100;
-
-        // Combine noises with weights
-        double height = baseNoise * 0.5 + midNoise * 0.25 + detailNoise * 0.15 + fineNoise * 0.1;
-
-        // Clamp to valid range (200-4000 blocks)
-        height = Math.max(200, Math.min(MAX_HEIGHT, height));
-
-        return (int) height;
+    private Random getRandomForBlock(int x, int y, int z) {
+        Random random = new Random(seed);
+        random.setSeed(seed ^ ((long)x * 73856093L ^ (long)y * 19349663L ^ (long)z * 83492791L));
+        return random;
     }
 
     @Override
@@ -76,32 +58,52 @@ public class CustomTallChunkGenerator extends ChunkGenerator {
 
     @Override
     public void carve(ChunkRegion chunkRegion, long seed, NoiseConfig noiseConfig, BiomeAccess biomeAccess, StructureAccessor structureAccessor, Chunk chunk) {
-        // Custom carving logic (optional)
+        // No carving
     }
 
     @Override
     public void buildSurface(ChunkRegion region, StructureAccessor structures, NoiseConfig noiseConfig, Chunk chunk) {
-        // Fill chunk with terrain
+        // Fill chunk with random cubic structures
         int chunkX = chunk.getPos().x;
         int chunkZ = chunk.getPos().z;
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                int worldX = chunkX * 16 + x;
-                int worldZ = chunkZ * 16 + z;
-                int terrainHeight = calculateTerrainHeight(worldX, worldZ);
+                for (int y = MIN_Y; y < MIN_Y + MAX_HEIGHT; y++) {
+                    int worldX = chunkX * 16 + x;
+                    int worldZ = chunkZ * 16 + z;
 
-                BlockPos.Mutable mutable = new BlockPos.Mutable(worldX, 0, worldZ);
+                    // Get random for this position to determine structure size
+                    Random random = getRandomForBlock(worldX, y, worldZ);
+                    int structureSize = 1 + random.nextInt(1000); // 1-1000 block sizes
 
-                // Fill from bottom (-64) to terrain height
-                for (int y = -64; y < terrainHeight; y++) {
-                    mutable.setY(y);
-                    if (y < terrainHeight - 5) {
-                        chunk.setBlockState(mutable, Blocks.STONE.getDefaultState());
-                    } else if (y < terrainHeight - 2) {
-                        chunk.setBlockState(mutable, Blocks.DIRT.getDefaultState());
-                    } else if (y == terrainHeight - 1) {
-                        chunk.setBlockState(mutable, Blocks.GRASS_BLOCK.getDefaultState());
+                    // Snap to structure origin
+                    int structureX = (worldX / structureSize) * structureSize;
+                    int structureY = (y / structureSize) * structureSize;
+                    int structureZ = (worldZ / structureSize) * structureSize;
+
+                    // Get random for this structure
+                    Random structureRandom = new Random(seed);
+                    structureRandom.setSeed(seed ^ ((long)structureX * 73856093L ^ (long)structureY * 19349663L ^ (long)structureZ * 83492791L));
+
+                    // Bias towards air (70% air, 30% grey_goo)
+                    boolean fillBlock = structureRandom.nextInt(10) < 3; // 30% chance for grey_goo
+
+                    BlockPos pos = new BlockPos(worldX, y, worldZ);
+                    BlockState state = fillBlock ? ModBlocks.GREY_GOO.getDefaultState() : Blocks.AIR.getDefaultState();
+                    chunk.setBlockState(pos, state);
+                }
+            }
+        }
+
+        // Remove geodes
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                for (int y = MIN_Y; y < MIN_Y + MAX_HEIGHT; y++) {
+                    BlockPos pos = new BlockPos(chunk.getPos().getStartX() + x, y, chunk.getPos().getStartZ() + z);
+                    BlockState state = chunk.getBlockState(pos);
+                    if (state.getBlock() == Blocks.AMETHYST_BLOCK || state.getBlock() == Blocks.BUDDING_AMETHYST) {
+                        chunk.setBlockState(pos, Blocks.AIR.getDefaultState());
                     }
                 }
             }
@@ -110,7 +112,7 @@ public class CustomTallChunkGenerator extends ChunkGenerator {
 
     @Override
     public void populateEntities(ChunkRegion region) {
-        // Entity population (optional)
+        // No entity population
     }
 
     @Override
@@ -125,44 +127,30 @@ public class CustomTallChunkGenerator extends ChunkGenerator {
 
     @Override
     public int getSeaLevel() {
-        return 63; // Standard sea level
+        return MIN_Y;
     }
 
     @Override
     public int getMinimumY() {
-        return -64; // Standard minimum Y
+        return MIN_Y;
     }
 
     @Override
     public int getHeight(int x, int z, Heightmap.Type heightmap, HeightLimitView world, NoiseConfig noiseConfig) {
-        return calculateTerrainHeight(x, z);
+        return MIN_Y + 64;
     }
 
     @Override
     public VerticalBlockSample getColumnSample(int x, int z, HeightLimitView world, NoiseConfig noiseConfig) {
-        int height = calculateTerrainHeight(x, z);
         BlockState[] states = new BlockState[world.getHeight()];
-
-        for (int y = world.getBottomY(); y < world.getBottomY() + world.getHeight(); y++) {
-            int index = y - world.getBottomY();
-            if (index >= 0 && index < states.length) {
-                if (y < height - 5) {
-                    states[index] = Blocks.STONE.getDefaultState();
-                } else if (y < height - 2) {
-                    states[index] = Blocks.DIRT.getDefaultState();
-                } else if (y == height - 1) {
-                    states[index] = Blocks.GRASS_BLOCK.getDefaultState();
-                } else {
-                    states[index] = Blocks.AIR.getDefaultState();
-                }
-            }
+        for (int i = 0; i < states.length; i++) {
+            states[i] = Blocks.AIR.getDefaultState();
         }
-
         return new VerticalBlockSample(world.getBottomY(), states);
     }
 
     @Override
     public void appendDebugHudText(List<String> text, NoiseConfig noiseConfig, BlockPos pos) {
-        text.add("Custom Tall Chunk Generator");
+        text.add("Random Cubic Structure Generator");
     }
 }

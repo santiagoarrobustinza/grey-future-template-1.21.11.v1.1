@@ -23,6 +23,9 @@
 		],
 		"client": [
 			"grey.future.GreyFutureClient"
+		],
+		"fabric-bootstrap": [
+			"grey.future.GreyFutureBootstrap::bootstrap"
 		]
 	},
 	"mixins": [
