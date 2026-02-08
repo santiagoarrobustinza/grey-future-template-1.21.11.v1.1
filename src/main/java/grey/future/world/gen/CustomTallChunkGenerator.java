@@ -73,38 +73,42 @@ public class CustomTallChunkGenerator extends ChunkGenerator {
                     int worldX = chunkX * 16 + x;
                     int worldZ = chunkZ * 16 + z;
 
-                    // Get random for this position to determine structure size
-                    Random random = getRandomForBlock(worldX, y, worldZ);
-                    int structureSize = 1 + random.nextInt(1000); // 1-1000 block sizes
-
                     // Snap to structure origin
-                    int structureX = (worldX / structureSize) * structureSize;
-                    int structureY = (y / structureSize) * structureSize;
-                    int structureZ = (worldZ / structureSize) * structureSize;
+                    int structureX = worldX / 4; // Assuming size 4 as base
+                    int structureY = y / 4;
+                    int structureZ = worldZ / 4;
 
-                    // Get random for this structure
+                    // Get random for this structure (ONCE per structure)
                     Random structureRandom = new Random(seed);
                     structureRandom.setSeed(seed ^ ((long)structureX * 73856093L ^ (long)structureY * 19349663L ^ (long)structureZ * 83492791L));
 
-                    // Bias towards air (70% air, 30% grey_goo)
-                    boolean fillBlock = structureRandom.nextInt(10) < 3; // 30% chance for grey_goo
+                    // Calculate size once per structure
+                    int roll = structureRandom.nextInt(100);
+                    int exponent;
+                    if (roll < 30) exponent = 0;           // 5% chance: 2^0 = 1
+                    else if (roll < 55) exponent = 1;     // 15% chance: 2^1 = 2
+                    else if (roll < 70) exponent = 2;     // 15% chance: 2^2 = 4 (peak around 3)
+                    else if (roll < 75) exponent = 3;     // 13% chance: 2^3 = 8
+                    else if (roll < 79) exponent = 4;     // 10% chance: 2^4 = 16
+                    else if (roll < 83) exponent = 5;     // 8% chance: 2^5 = 32
+                    else if (roll < 85) exponent = 6;     // 6% chance: 2^6 = 64
+                    else if (roll < 87) exponent = 7;     // 5% chance: 2^7 = 128
+                    else if (roll < 90) exponent = 8;     // 4% chance: 2^8 = 256
+                    else exponent = 9 + structureRandom.nextInt(5);
+
+                    int structureSize = (int) Math.pow(2, exponent);
+
+                    // Re-snap with actual size
+                    int actualStructureX = (worldX / structureSize) * structureSize;
+                    int actualStructureY = (y / structureSize) * structureSize;
+                    int actualStructureZ = (worldZ / structureSize) * structureSize;
+
+                    // Fill or air
+                    boolean fillBlock = structureRandom.nextInt(10) < 3;
 
                     BlockPos pos = new BlockPos(worldX, y, worldZ);
                     BlockState state = fillBlock ? ModBlocks.GREY_GOO.getDefaultState() : Blocks.AIR.getDefaultState();
                     chunk.setBlockState(pos, state);
-                }
-            }
-        }
-
-        // Remove geodes
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                for (int y = MIN_Y; y < MIN_Y + MAX_HEIGHT; y++) {
-                    BlockPos pos = new BlockPos(chunk.getPos().getStartX() + x, y, chunk.getPos().getStartZ() + z);
-                    BlockState state = chunk.getBlockState(pos);
-                    if (state.getBlock() == Blocks.AMETHYST_BLOCK || state.getBlock() == Blocks.BUDDING_AMETHYST) {
-                        chunk.setBlockState(pos, Blocks.AIR.getDefaultState());
-                    }
                 }
             }
         }

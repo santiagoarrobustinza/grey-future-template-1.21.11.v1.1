@@ -1,7 +1,8 @@
 {
   "music.tall_realm": {
+    "category": "music",
     "sounds": [
-      "grey-future:music/digital_baptism"
+      "grey-future:music/21_moonfall_loop"
     ],
     "subtitle": "music.grey_future"
   }

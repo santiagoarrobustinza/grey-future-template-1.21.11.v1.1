@@ -18,8 +18,9 @@ public class ModBlocks {
 
     public static final Block GREY_GOO = registerBlock("grey_goo",
         new Block(AbstractBlock.Settings.create().registryKey(RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(GreyFuture.MOD_ID, "grey_goo")))
-                .strength(4f)
-                .requiresTool().sounds(BlockSoundGroup.IRON)));
+                .strength(3f)
+                .requiresTool().sounds(BlockSoundGroup.IRON)
+                .luminance(state -> 7)));
 
     private static Block registerBlock(String name, Block block) {
         registerBlockItem(name, block);

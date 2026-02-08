@@ -1,5 +1,5 @@
 {
-  "type": "minecraft:overworld",
+  "type": "grey-future:tall_realm_type",
   "generator": {
     "type": "grey-future:custom_tall",
     "biome_source": {
@@ -11,7 +11,7 @@
       "weirdness_noise": {"firstOctave": -7, "amplitudes": [1, 1]},
       "biomes": [
         {
-          "biome": "minecraft:plains",
+          "biome": "grey-future:grey_plains",
           "parameters": {"temperature": 0.0, "humidity": 0.0, "continentalness": 0.0, "erosion": 0.0, "depth": 0.0, "weirdness": 0.0, "offset": 0.0}
         }
       ]
@@ -33,5 +33,8 @@
     "minecraft:mineshaft": [],
     "minecraft:ruined_portal": [],
     "minecraft:buried_treasure": []
+  },
+  "effects": {
+    "clouds": false
   }
 }
