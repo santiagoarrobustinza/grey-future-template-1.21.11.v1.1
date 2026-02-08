@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "grey-future",
+	"version": "${version}",
+	"name": "Grey Future",
+	"description": "Welcome to the future",
+	"authors": [
+		"Solaris_21"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/grey-future/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"grey.future.GreyFuture"
+		],
+		"fabric-datagen": [
+			"grey.future.GreyFutureDataGenerator"
+		],
+		"client": [
+			"grey.future.GreyFutureClient"
+		]
+	},
+	"mixins": [
+		"grey-future.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
