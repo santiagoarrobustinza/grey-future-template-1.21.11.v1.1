@@ -1,0 +1,3 @@
+
+accessible method net/minecraft/client/render/BufferBuilder build ()Lnet/minecraft/client/render/BuiltBuffer;
+accessible method net/minecraft/client/render/BuiltBuffer draw ()V

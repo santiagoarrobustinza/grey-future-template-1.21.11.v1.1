@@ -31,6 +31,7 @@
 	"mixins": [
 		"grey-future.mixins.json"
 	],
+	"accessWidener": "greyfuture.aw",
 	"depends": {
 		"fabricloader": ">=0.18.4",
 		"minecraft": "~1.21.11",
