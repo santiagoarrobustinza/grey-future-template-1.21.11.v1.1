@@ -1,0 +1,28 @@
+{
+  "has_precipitation": true,
+  "temperature": 0.8,
+  "downfall": 0.4,
+  "category": "plains",
+  "mood_sound": {
+    "tick_delay": 6000,
+    "block_search_extent": 8,
+    "offset": 2.0,
+    "sound": "minecraft:ambient.cave"
+  },
+  "music": {
+    "replace_current_music": false,
+    "sound": "minecraft:music.overworld.forest",
+    "max_delay": 24000,
+    "min_delay": 12000
+  },
+  "effects": {
+    "sky_color": 7907327,
+    "water_fog_color": 329011,
+    "fog_color": 12638463,
+    "water_color": 4159204,
+    "foliage_color": 9470285,
+    "grass_color": 10387789
+  },
+  "features": [],
+  "spawners": {}
+}
