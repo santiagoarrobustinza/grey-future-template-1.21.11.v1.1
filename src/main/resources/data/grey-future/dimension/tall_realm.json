@@ -4,8 +4,8 @@
     "type": "grey-future:tall_generator",
     "biome_source": {
       "type": "minecraft:fixed",
-      "biome": "grey-future:tall_plains"
+      "biome": "minecraft:plains"
     },
-    "seed": 123456789
+    "seed": 0
   }
 }
